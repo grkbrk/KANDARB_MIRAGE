@@ -1,0 +1,47 @@
+For more information see:
+// https://google.github.io/styleguide/cppguide.html
+// https://www.geeksforgeeks.org/cpp/structure-of-cpp-program/
+
+
+A .cpp file should look like this: (!!! NOT FULLY DECIDED YET, DO PROVIDE INPUT!)
+// name of file
+// BEXUS 39 MIRAGE
+// Uppsala 2026 
+
+//From geeksforgeeks, modified:
+// Linking Section
+#include <iostream>
+using namespace std;
+
+// Definition Section
+#define msg "FACTORIAL\n"
+typedef int INTEGER;
+
+// Global Declaration Section
+INTEGER num = 0, fact = 1, storeFactorial = 0;
+
+// Function Section
+INTEGER factorial(INTEGER num)
+{
+...
+}
+
+// Main Function
+INTEGER main()
+{
+...
+}
+
+
+  
+
+// Single line comment
+/*  B
+    L
+    O
+    C
+    K
+    Comment */
+
+Add a todo comment:
+// TODO: (Name of person woking on it/responsible) "Thing to do" - Your Name 
