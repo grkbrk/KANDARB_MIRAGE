@@ -19,7 +19,17 @@
 #define PWM_pump_2 GPIO_NUM_30
 
 //I2c adresses
-#define Multiplexer_address 0x70 
-#define SHT3x_1_adress 0x44
-#define SHT3x_2_adress 0x44
+#define Multiplexer_addr 0x70 
+#define SHT3x_1_addr 0x44
+#define SHT3x_2_addr 0x44
+#define RTC_addr 0x68
 
+#define I2C_master I2C_NUM_0
+#define multiplex_XXX 0
+#define multiplex_YYY 1
+#define multiplex_ZZZ 2
+#define multiplex_AAA 3
+#define multiplex_BBB 4
+#define multiplex_CCC 5
+#define multiplex_DDD 6
+#define multiplex_EEE 7
