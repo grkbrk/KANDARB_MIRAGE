@@ -16,6 +16,11 @@
 // Socket to use for data transmission (0–7)
 // Socket 0 gets the full 16KB TX + 16KB RX internal buffer
 #define WIZ_SOCKET      0
+
+// ---------------------------------------------------------------
+// Dedicated socket for ICMP ping (separate from TCP socket 0)
+// ---------------------------------------------------------------
+#define WIZ_PING_SOCKET     1   // Uses socket 1, independent of TCP on socket 0
  
 // ---------------------------------------------------------------
 // Network configuration — update to match your network
@@ -64,6 +69,20 @@ esp_err_t wiz_send(const uint8_t *data, size_t length);
  *         or another esp_err_t on error.
  */
 esp_err_t wiz_receive(uint8_t *buf, size_t buf_size, size_t *bytes_read);
+
+/**
+ * @brief  Send an ICMP Echo Request and return IMMEDIATELY.
+ *         Fire-and-forget — no reply is waited for or checked.
+ *         Useful for watchdog-style "I am alive" signals where
+ *         the receiver logs arrival but the sender does not block.
+ *
+ * @param[in] target_ip  IP to ping as 4-byte array, e.g. {192,168,1,1}
+ * @param[in] message    Message to send with ping. Max 32 bytes.
+ *
+ * @return ESP_OK if the packet was handed to the W5500 TX buffer,
+ *         or an esp_err_t on error.
+ */
+esp_err_t wiz_ping(uint8_t *target_ip, const char *message);
  
 /**
  * @brief  Close the TCP connection and release the socket.

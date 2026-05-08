@@ -55,6 +55,13 @@ esp_err_t sd_read(const char *filename, uint8_t *out_buf,
                   size_t buf_size, size_t *bytes_read);
 
 /**
+ * @brief Deleate all files form the SD card. Keep formating and dirs.
+ * 
+ * @return ESP_OK on success, or an esp_err_t error code.
+ */
+esp_err_t sd_wipe_files();
+
+/**
  * @brief  Unmount the FAT filesystem and release the SD card SPI device.
  *         Called by hardware_deinit() in Initialize.cpp — do not call directly.
  */

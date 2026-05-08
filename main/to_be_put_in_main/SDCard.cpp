@@ -111,8 +111,8 @@ esp_err_t sd_write(const char *filename, const uint8_t *data, size_t length)
 esp_err_t sd_read(const char *filename, uint8_t *out_buf,
                   size_t buf_size, size_t *bytes_read)
 {
-    if (!s_mounted)                              return ESP_ERR_INVALID_STATE;
-    if (!filename || !out_buf || !bytes_read)    return ESP_ERR_INVALID_ARG;
+    // if (!s_mounted)                              return ESP_ERR_INVALID_STATE;
+    // if (!filename || !out_buf || !bytes_read)    return ESP_ERR_INVALID_ARG;
 
     char path[SD_MAX_PATH_LEN];
     snprintf(path, sizeof(path), "%s/%s", SD_MOUNT_POINT, filename);
@@ -128,4 +128,42 @@ esp_err_t sd_read(const char *filename, uint8_t *out_buf,
 
     ESP_LOGI(TAG, "Read %zu bytes <- %s", *bytes_read, path);
     return ESP_OK;
+}
+
+esp_err_t sd_wipe_files()
+{
+    DIR *dor = opendir(SD_MOUNT_POINT);
+    if (!dir){
+        ESP_LOGE(TAG, "Failed to open directory (errno %d)", errno);
+        return ESP_FAIL;
+    }
+
+    struct dirent *entry;
+    int failed = 0;
+
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip directories (e.g. "." and "..")
+        if (entry->d_type == DT_DIR) continue;
+ 
+        char path[SD_MAX_PATH_LEN];
+        snprintf(path, sizeof(path), "%s/%s", SD_MOUNT_POINT, entry->d_name);
+ 
+        if (unlink(path) != 0) {
+            ESP_LOGE( TAG, "Failed to delete %s (errno %d)", path, errno);
+            failed++;
+        } else {
+            ESP_LOGI(TAG, "Deleted %s", path);
+        }
+    }
+
+    closedir(dir);
+    
+    if (failed > 0) {
+    ESP_LOGW(TAG, "%d file(s) could not be deleted", failed);
+    return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "All files deleted");
+    return ESP_OK;
+ 
 }

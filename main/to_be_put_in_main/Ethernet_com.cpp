@@ -46,6 +46,52 @@ static const char *TAG = "Ethernet WIZ850io";
  
 // SPI device handle — registered on the existing SPI2 bus
 static spi_device_handle_t s_spi = NULL;
+
+// ---------------------------------------------------------------------------
+// ICMP ping helpers
+// ---------------------------------------------------------------------------
+ 
+// ICMP packet structure
+typedef struct {
+    uint8_t  type;        // 8 = Echo Request, 0 = Echo Reply
+    uint8_t  code;        // Always 0
+    uint16_t checksum;
+    uint16_t id;
+    uint16_t seq;
+    uint8_t  data[32];    // Payload — 32 bytes is conventional ping size
+} icmp_packet_t;
+ 
+// Standard internet checksum (ones-complement sum of 16-bit words)
+static uint16_t icmp_checksum(uint8_t *buf, size_t len)
+{
+    uint32_t sum = 0;
+    while (len > 1) {
+        sum += (buf[0] << 8) | buf[1];
+        buf += 2;
+        len -= 2;
+    }
+    if (len == 1) sum += (*buf << 8);         // Odd byte
+    while (sum >> 16) sum = (sum & 0xFFFF) + (sum >> 16);  // Fold carry
+    return (uint16_t)(~sum);
+}
+ 
+// Build a ready-to-send ICMP Echo Request packet
+static void build_icmp_request(icmp_packet_t *pkt, uint16_t id, uint16_t seq, const char *message)
+{
+    pkt->type     = 8;    // Echo Request
+    pkt->code     = 0;
+    pkt->checksum = 0;    // Zero before computing
+    pkt->id       = htons(id);
+    pkt->seq      = htons(seq);
+    
+    cpp// Zero the payload then copy message into it (truncated to fit)
+    memset(pkt->data, 0, sizeof(pkt->data));
+    if (message) strncpy((char *)pkt->data, message, sizeof(pkt->data) - 1);
+ 
+    // Compute checksum over the whole packet
+    pkt->checksum = htons(icmp_checksum((uint8_t *)pkt, sizeof(icmp_packet_t)));
+}
+ 
  
  
 // ---------------------------------------------------------------------------
@@ -162,7 +208,7 @@ esp_err_t wiz_receive(uint8_t *buf, size_t buf_size, size_t *bytes_read)
     uint16_t available = getSn_RX_RSR(WIZ_SOCKET);
     if (available == 0) {
         *bytes_read = 0;
-        return ESP_ERR_NOT_FOUND;   // No data yet — caller can poll or wait
+        return ESP_ERR_NOT_FOUND;   // No data yet
     }
  
     uint16_t to_read = (available < buf_size) ? available : (uint16_t)buf_size;
@@ -177,6 +223,47 @@ esp_err_t wiz_receive(uint8_t *buf, size_t buf_size, size_t *bytes_read)
     ESP_LOGI(TAG, "Received %zu bytes", *bytes_read);
     return ESP_OK;
 }
+
+// ---------------------------------------------------------------------------
+// wiz_ping — fire and forget: send and return IMMEDIATELY, no reply checked
+// ---------------------------------------------------------------------------
+ 
+esp_err_t wiz_ping(uint8_t *target_ip, const char *message)
+{
+    static uint16_t s_seq = 0;
+    const  uint16_t ID       = 0xABCD;
+ 
+    if (socket(WIZ_PING_SOCKET, Sn_MR_IPRAW, 0, 0) != WIZ_PING_SOCKET) {
+        ESP_LOGE(TAG, "ping: socket() failed");
+        return ESP_FAIL;
+    }
+ 
+    setSn_PROTO(WIZ_PING_SOCKET, 0x01);
+ 
+    icmp_packet_t request;
+    build_icmp_request(&request, ID, ++s_seq, message);
+ 
+    int32_t sent = sendto(WIZ_PING_SOCKET, (uint8_t *)&request,
+                          sizeof(request), target_ip, 0);
+ 
+    // Close immediately — do not wait for any reply
+    close(WIZ_PING_SOCKET);
+ 
+    if (sent != sizeof(request)) {
+        ESP_LOGE(TAG, "ping: sendto() failed");
+        return ESP_FAIL;
+    }
+ 
+    ESP_LOGI(TAG, "ping sent to %d.%d.%d.%d",
+             target_ip[0], target_ip[1], target_ip[2], target_ip[3]);
+    return ESP_OK;
+}
+
+//Wait with this til we know if we or ground takes the initiative.
+//Remember to update the .h file when decided.
+//esp_err_t wiz_check_connection(uint8_t *buf)
+
+ 
  
 void wiz_disconnect(void)
 {
