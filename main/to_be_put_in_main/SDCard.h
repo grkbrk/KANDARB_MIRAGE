@@ -59,7 +59,7 @@ esp_err_t sd_read(const char *filename, uint8_t *out_buf,
  * 
  * @return ESP_OK on success, or an esp_err_t error code.
  */
-esp_err_t sd_wipe_files();
+esp_err_t sd_wipe_files(void);
 
 /**
  * @brief  Unmount the FAT filesystem and release the SD card SPI device.

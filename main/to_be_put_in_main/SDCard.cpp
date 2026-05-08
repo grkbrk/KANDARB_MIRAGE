@@ -130,7 +130,7 @@ esp_err_t sd_read(const char *filename, uint8_t *out_buf,
     return ESP_OK;
 }
 
-esp_err_t sd_wipe_files()
+esp_err_t sd_wipe_files(void)
 {
     DIR *dor = opendir(SD_MOUNT_POINT);
     if (!dir){

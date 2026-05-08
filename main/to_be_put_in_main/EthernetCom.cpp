@@ -30,7 +30,7 @@
  *   SPDX-License-Identifier: BSD-3-Clause
  */
  
-#include "Ethernet_com.h"
+#include "EthernetCom.h"
  
 // ioLibrary headers (from WIZnet ioLibrary_Driver component)
 #include "wizchip_conf.h"
@@ -39,7 +39,6 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
  
 static const char *TAG = "Ethernet WIZ850io";
