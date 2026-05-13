@@ -1,8 +1,6 @@
 #include "esp_log.h"
 #include "Settings.h"
 
-
-
 static const char *TAG = "Humidity";
 static bool humid = true;
 
