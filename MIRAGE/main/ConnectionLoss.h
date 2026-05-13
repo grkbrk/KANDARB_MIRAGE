@@ -26,9 +26,6 @@
  *   terminated         — set to true on termination
  */
 
-// 30 minutes expressed in microseconds (esp_timer resolution is 1 us)
-#define TERMINATION_TIMEOUT (30LL * 60LL * 1000000LL)
-
 #ifdef __cplusplus
 extern "C" {
 #endif

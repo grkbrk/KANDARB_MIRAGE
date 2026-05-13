@@ -3,34 +3,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
-
-
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//This should be in initialize.cpp
-// ---------------------------------------------------------------
-// WIZ850io specific pins (W5500 chip)
-// ---------------------------------------------------------------
-#define WIZ_PIN_CS      10      // IO10 - CS0 (WIZ850io)
-#define WIZ_PIN_RST     8       // IO8  - RST0 (Reset to WIZ850io)
- 
-// Socket to use for data transmission (0–7)
-// Socket 0 gets the full 16KB TX + 16KB RX internal buffer
-#define WIZ_SOCKET      0
-
-// ---------------------------------------------------------------
-// Dedicated socket for ICMP ping (separate from TCP socket 0)
-// ---------------------------------------------------------------
-#define WIZ_PING_SOCKET     1   // Uses socket 1, independent of TCP on socket 0
- 
-// ---------------------------------------------------------------
-// Network configuration — update to match your network
-// ---------------------------------------------------------------
-#define WIZ_MAC         { 0x00, 0x08, 0xDC, 0x01, 0x02, 0x03 }
-#define WIZ_IP          { 192, 168, 1, 100 }
-#define WIZ_GATEWAY     { 192, 168, 1, 1   }
-#define WIZ_SUBNET      { 255, 255, 255, 0 }
-#define WIZ_DNS         { 8, 8, 8, 8       }
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  
 #ifdef __cplusplus
 extern "C" {

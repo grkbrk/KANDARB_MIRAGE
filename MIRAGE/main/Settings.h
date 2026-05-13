@@ -72,13 +72,21 @@ extern spi_device_handle_t WIZ_handle;
 #define ethernet_queue_size 7
 #define WIZ_clk_spd_hz 1000000 // 1MHz
 
+
 //Ethernet (WIZ)
-#define WIZ_SOCKET 0
-#define WIZ_MAC {0x00, 0x08, 0xDC, 0x01, 0x02, 0x03}
-#define WIZ_IP {192, 168, 1, 100}
-#define WIZ_GATEWAY {192, 168, 1, 1}    
-#define WIZ_SUBNET {255, 255, 255, 0}  
-#define WIZ_DNS {8, 8, 8, 8}       
+#define WIZ_SOCKET 0        //TCP
+#define WIZ_PING_SOCKET 1   // ICMP uses socket 1, independent of TCP
+//Socket 0 14KB TX + 14KB RX internal buffer
+//Socket 1  2KB TX +  2KB RX internal buffer
+
+//Ethernet Network configuration
+#define WIZ_MAC         { 0x00, 0x08, 0xDC, 0x01, 0x02, 0x03 }
+#define WIZ_IP          { 192, 168, 1, 100 }
+#define WIZ_GATEWAY     { 192, 168, 1, 1   }
+#define WIZ_SUBNET      { 255, 255, 255, 0 }
+#define WIZ_DNS         { 8, 8, 8, 8       } 
+
+
 
 //Uart
 #define UART_PORT UART_NUM_1
