@@ -104,7 +104,7 @@ void init_uart()
     uart_config.baud_rate = 115200;
     uart_config.data_bits = UART_DATA_8_BITS;
     uart_config.parity    = UART_PARITY_DISABLE;
-    uart_config.stop_bits = UART_STOP_BITS_2;   // ✅ K96 requirement
+    uart_config.stop_bits = UART_STOP_BITS_2;
     uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     uart_config.source_clk = UART_SCLK_APB;
 
