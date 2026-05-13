@@ -6,6 +6,7 @@
 //us = microseconds
 
 #include "esp_log.h"
+#include "Settings.h"
 
 /* Use this instead of external RTC since big time span
  and it will still work in case something would happen to
@@ -16,17 +17,6 @@
 esp_err_t terminate_experiment(int64_t elapsed, int *mode, bool *terminated);
 
 static const char *TAG = "Connection loss / termination timer";
-
-/* in main or something instead:
- *   volatile int64_t loss_timestamp_us = -1;
- *   volatile bool    con_lost          = false;
- *   int              mode              = 0;
- *   bool             terminated        = false;
-*/
-
-
-// 30 min in microseconds (esp_timer runs on us)
-#define TERMINATION_TIMEOUT (30LL * 60LL *1000000LL)
 
 esp_err_t connection_lost(bool *con_lost, int64_t *loss_timestamp_us){
     *loss_timestamp_us = esp_timer_get_time(); //in us

@@ -84,7 +84,10 @@ extern spi_device_handle_t WIZ_handle;
 #define UART_PORT UART_NUM_1
 
 
-
+//Humidity settings !!!PLACEHOLDER NUMBERS!!!
 #define HUMIDITY_TARGET 80
 #define TEMPERATURE_TARGET 20
 
+//Conneciton lost timer
+// 30 min in microseconds (esp_timer runs on us)
+#define TERMINATION_TIMEOUT (30LL * 60LL *1000000LL)
