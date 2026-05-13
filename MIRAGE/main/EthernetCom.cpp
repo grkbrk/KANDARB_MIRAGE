@@ -52,7 +52,7 @@ static spi_device_handle_t s_spi = NULL;
  
 // ICMP packet structure
 typedef struct {
-    uint8_t  type;        // 8 = Echo Request, 0 = Echo Reply
+    uint8_t  type;        // 8 = Echo Request, 0 = Echo Reply, use only 0 atm
     uint8_t  code;        // Always 0
     uint16_t checksum;
     uint16_t id;
