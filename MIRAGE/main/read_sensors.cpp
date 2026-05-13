@@ -8,13 +8,6 @@
 
 SensorData sensor_data;
 
-//TMP1075 KLAR
-//ABP2 KLAR
-//SHT45 KLAR
-//TMP117 KLAR
-//MS5803 KLAR
-//DS3231
-
 //continous sensor
 static void read_tmp1075(float* temperature)
 {

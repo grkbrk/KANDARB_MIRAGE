@@ -100,26 +100,35 @@ void init_i2c()
 void init_uart()
 {
     uart_config_t uart_config = {};
+
     uart_config.baud_rate = 115200;
     uart_config.data_bits = UART_DATA_8_BITS;
     uart_config.parity    = UART_PARITY_DISABLE;
-    uart_config.stop_bits = UART_STOP_BITS_1;
+    uart_config.stop_bits = UART_STOP_BITS_2;   // ✅ K96 requirement
     uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
+    uart_config.source_clk = UART_SCLK_APB;
 
-    // Apply config
+    // Apply UART configuration
     uart_param_config(UART_PORT, &uart_config);
 
-    // Set pins
-    uart_set_pin(UART_PORT, K96_TX_PIN, K96_RX_PIN,
-                 UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    // Set UART pins
+    uart_set_pin(
+        UART_PORT,
+        K96_TX_PIN,
+        K96_RX_PIN,
+        UART_PIN_NO_CHANGE,
+        UART_PIN_NO_CHANGE
+    );
 
-    // Install driver
-    uart_driver_install(UART_PORT,
-                        1024,  // RX buffer
-                        0,     // TX buffer
-                        0,     // Event queue
-                        NULL,  // Pointer queue
-                        0);    // Flags queue
+    // Install UART driver
+    uart_driver_install(
+        UART_PORT,
+        1024,   // RX buffer
+        0,      // TX buffer
+        0,      // Event queue size
+        NULL,
+        0
+    );
 }
 
 // Starting sensors that needs to be initialized

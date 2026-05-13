@@ -23,7 +23,8 @@
 #define I2C_SCL GPIO_NUM_26
 
 //Uart K96 channel
-#define UART_K96 UART_NUM_0
+#define UART_K96 UART_NUM_1
+#define UART_buff_size 256
 
 //I2c adresses and multiplexer channels
 #define multiplex_addr 0x70                            // TCA9548
