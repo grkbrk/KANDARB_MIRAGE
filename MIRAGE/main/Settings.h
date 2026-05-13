@@ -84,3 +84,7 @@ extern spi_device_handle_t WIZ_handle;
 #define UART_PORT UART_NUM_1
 
 
+
+#define HUMIDITY_TARGET 80
+#define TEMPERATURE_TARGET 20
+
