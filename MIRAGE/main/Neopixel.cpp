@@ -1,4 +1,11 @@
+/* Neopixel values from 0 to 255
+* r: red:   0-255
+* g: green: 0-255
+* b: blue:  0-255
+*/
+
 #include "Neopixel.h"
+#include "Settings.h"
  
 #include "led_strip.h"
 #include "esp_log.h"
@@ -6,18 +13,15 @@
  
 static const char *TAG = "Neopixel";
  
-/* Single strip handle — owned by this translation unit */
-static led_strip_handle_t s_strip = NULL;
- 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
  
 /** Push the current pixel buffer to the hardware. */
-static esp_err_t refresh(void)
-{
+static esp_err_t refresh(void){
     if (s_strip == NULL) {
-        ESP_LOGE(TAG, "refresh() called before neopixel_init()");
+        ESP_LOGE(TAG, "Can't find a handle. Call neopixel_init()");
         return ESP_ERR_INVALID_STATE;
     }
+
     return led_strip_refresh(s_strip);
 }
  
@@ -25,6 +29,7 @@ static esp_err_t refresh(void)
 static esp_err_t fill_all(uint8_t r, uint8_t g, uint8_t b)
 {
     if (s_strip == NULL) {
+        ESP_LOGE(TAG, "Can't find a handle. Call neopixel_init()");
         return ESP_ERR_INVALID_STATE;
     }
  
@@ -43,7 +48,7 @@ static esp_err_t fill_all(uint8_t r, uint8_t g, uint8_t b)
 esp_err_t neopixel_set_pixel(uint8_t index, uint8_t red, uint8_t green, uint8_t blue)
 {
     if (s_strip == NULL) {
-        ESP_LOGE(TAG, "neopixel_set_pixel() called before neopixel_init()");
+        ESP_LOGE(TAG, "Can't find a handle. Call neopixel_init()");
         return ESP_ERR_INVALID_STATE;
     }
     if (index >= NEOPIXEL_COUNT) {
@@ -68,7 +73,7 @@ esp_err_t neopixel_clear_pixel(uint8_t index)
 esp_err_t neopixel_status_nominal(void)
 {
     /* Solid green — all good, connected */
-    return fill_all(0, 40, 0);        /* Dimmed — 40/255 is plenty indoors   */
+    return fill_all(0, 40, 0); 
 }
  
 esp_err_t neopixel_status_connection_lost(void)

@@ -99,3 +99,7 @@ extern spi_device_handle_t WIZ_handle;
 //Conneciton lost timer
 // 30 min in microseconds (esp_timer runs on us)
 #define TERMINATION_TIMEOUT (30LL * 60LL *1000000LL)
+
+//Neopixel
+extern led_strip_handle_t s_strip = NULL;
+#define NEOPIXEL_COUNT 3 //3 Neopixels available
