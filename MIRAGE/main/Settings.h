@@ -72,7 +72,6 @@ extern spi_device_handle_t WIZ_handle;
 #define ethernet_queue_size 7
 #define WIZ_clk_spd_hz 1000000 // 1MHz
 
-
 //Ethernet (WIZ)
 #define WIZ_SOCKET 0        //TCP
 #define WIZ_PING_SOCKET 1   // ICMP uses socket 1, independent of TCP
@@ -86,6 +85,9 @@ extern spi_device_handle_t WIZ_handle;
 #define WIZ_SUBNET      { 255, 255, 255, 0 }
 #define WIZ_DNS         { 8, 8, 8, 8       } 
 
+//SD Card settings
+#define SD_MOUNT_POINT  "/sdcard" //Used to build path name
+#define SD_MAX_PATH_LEN 64
 
 
 //Uart

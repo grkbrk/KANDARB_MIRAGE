@@ -16,6 +16,7 @@
  */
 
 #include "SDCard.h"
+#include "Settings.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -26,56 +27,6 @@
 #include "sdmmc_cmd.h"
 
 static const char    *TAG      = "SDCard";
-static sdmmc_card_t  *s_card   = NULL;
-static bool           s_mounted = false;
-
-// ---------------------------------------------------------------------------
-// Mount / unmount  (called from Initialize.cpp, not by application code)
-// ---------------------------------------------------------------------------
-
-esp_err_t sd_mount(void)
-{
-    if (s_mounted) {
-        ESP_LOGW(TAG, "Already mounted");
-        return ESP_OK;
-    }
-
-    // Register the SD card as an SPI device on the existing SPI2 bus
-    sdspi_device_config_t dev_cfg = SDSPI_DEVICE_CONFIG_DEFAULT();
-    dev_cfg.gpio_cs = SD_PIN_CS;
-    dev_cfg.host_id = SPI2_HOST;
-
-    esp_vfs_fat_sdmmc_mount_config_t mount_cfg = {
-        .format_if_mount_failed = false,
-        .max_files              = 5,
-        .allocation_unit_size   = 16 * 1024,
-    };
-
-    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
-    host.slot = SPI2_HOST;
-
-    esp_err_t ret = esp_vfs_fat_sdspi_mount(SD_MOUNT_POINT, &host,
-                                             &dev_cfg, &mount_cfg, &s_card);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Mount failed: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    s_mounted = true;
-    ESP_LOGI(TAG, "Mounted at %s", SD_MOUNT_POINT);
-    sdmmc_card_print_info(stdout, s_card);
-    return ESP_OK;
-}
-
-void sd_unmount(void)
-{
-    if (!s_mounted) return;
-
-    esp_vfs_fat_sdcard_unmount(SD_MOUNT_POINT, s_card);
-    s_card    = NULL;
-    s_mounted = false;
-    ESP_LOGI(TAG, "Unmounted");
-}
 
 // ---------------------------------------------------------------------------
 // Application-facing functions
@@ -83,9 +34,6 @@ void sd_unmount(void)
 
 esp_err_t sd_write(const char *filename, const uint8_t *data, size_t length)
 {
-    if (!s_mounted)           return ESP_ERR_INVALID_STATE;
-    if (!filename || !data || length == 0) return ESP_ERR_INVALID_ARG;
-
     char path[SD_MAX_PATH_LEN];
     snprintf(path, sizeof(path), "%s/%s", SD_MOUNT_POINT, filename);
 
@@ -111,9 +59,6 @@ esp_err_t sd_write(const char *filename, const uint8_t *data, size_t length)
 esp_err_t sd_read(const char *filename, uint8_t *out_buf,
                   size_t buf_size, size_t *bytes_read)
 {
-    // if (!s_mounted)                              return ESP_ERR_INVALID_STATE;
-    // if (!filename || !out_buf || !bytes_read)    return ESP_ERR_INVALID_ARG;
-
     char path[SD_MAX_PATH_LEN];
     snprintf(path, sizeof(path), "%s/%s", SD_MOUNT_POINT, filename);
 
