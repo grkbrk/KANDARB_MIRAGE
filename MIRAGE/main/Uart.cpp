@@ -44,3 +44,58 @@ static uint16_t modbus_crc16(
     return crc;
 }
 
+// Reads one data point from K96 RAM by calling adress and number of bytes to read, returns true if successful
+static bool K96_read_ram(
+    uint16_t ram_address,
+    uint8_t num_bytes,
+    uint8_t* response)
+{
+    uint8_t frame[7];
+
+    // Device address (K96 default is 0x68)
+    frame[0] = 0x68;
+
+    // Function code (0x44 for reading RAM)
+    frame[1] = 0x44;
+
+    // RAM address
+    frame[2] =
+        (ram_address >> 8) & 0xFF;
+
+    frame[3] =
+        ram_address & 0xFF;
+
+    // Number of bytes to read
+    frame[4] = num_bytes;
+
+    // CRC16
+    uint16_t crc =
+        modbus_crc16(frame, 5);
+
+    frame[5] =
+        crc & 0xFF;
+
+    frame[6] =
+        (crc >> 8) & 0xFF;
+
+    // Clear old UART RX data
+    uart_flush(UART_PORT);
+
+    // Send MODBUS frame
+    uart_write_bytes(
+        UART_PORT,
+        (const char*)frame,
+        sizeof(frame)
+    );
+
+    // Read response
+    int len =
+        uart_read_bytes(
+            UART_PORT,
+            response,
+            num_bytes + 5,
+            pdMS_TO_TICKS(1000)
+        );
+
+    return (len > 0);
+}
