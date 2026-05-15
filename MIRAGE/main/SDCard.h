@@ -1,33 +1,14 @@
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//100% Calude.................
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 #pragma once
 
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
 
-// ---------------------------------------------------------------
-// SD card specific pins
-// ---------------------------------------------------------------
-#define SD_PIN_CS       9       // IO9 - CS1 (microSD)
-
-#define SD_MOUNT_POINT  "/sdcard"
-#define SD_MAX_PATH_LEN 64
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief  Register the SD card on the already-initialised SPI2 bus
- *         and mount the FAT filesystem.
- *         Called by hardware_init() in Initialize.cpp — do not call directly.
- *
- * @return ESP_OK on success, or an esp_err_t error code.
- */
-esp_err_t sd_mount(void);
 
 /**
  * @brief  Write a binary buffer to a file on the SD card.
@@ -60,12 +41,6 @@ esp_err_t sd_read(const char *filename, uint8_t *out_buf,
  * @return ESP_OK on success, or an esp_err_t error code.
  */
 esp_err_t sd_wipe_files(void);
-
-/**
- * @brief  Unmount the FAT filesystem and release the SD card SPI device.
- *         Called by hardware_deinit() in Initialize.cpp — do not call directly.
- */
-void sd_unmount(void);
 
 #ifdef __cplusplus
 }

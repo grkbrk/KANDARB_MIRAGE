@@ -35,16 +35,16 @@
 // ioLibrary headers (from WIZnet ioLibrary_Driver component)
 #include "wizchip_conf.h"
 #include "socket.h"
- 
-#include "driver/spi_master.h"
-#include "driver/gpio.h"
+
 #include "esp_log.h"
 #include "freertos/task.h"
+#include "Settings.h"
  
 static const char *TAG = "Ethernet WIZ850io";
  
 // SPI device handle — registered on the existing SPI2 bus
-static spi_device_handle_t s_spi = NULL;
+//static spi_device_handle_t WIZ_handle = NULL;
+//^used to be s_spi, changed to fit settings.h 
 
 // ---------------------------------------------------------------------------
 // ICMP ping helpers
@@ -52,7 +52,7 @@ static spi_device_handle_t s_spi = NULL;
  
 // ICMP packet structure
 typedef struct {
-    uint8_t  type;        // 8 = Echo Request, 0 = Echo Reply, use only 0 atm
+    uint8_t  type;        // 8 = Echo Request, 0 = Echo Reply, use only 8 atm
     uint8_t  code;        // Always 0
     uint16_t checksum;
     uint16_t id;
@@ -100,12 +100,12 @@ static void build_icmp_request(icmp_packet_t *pkt, uint16_t id, uint16_t seq, co
  
 static void wiz_cs_select(void)
 {
-    gpio_set_level((gpio_num_t)WIZ_PIN_CS, 0);   // CS low = selected
+    gpio_set_level((gpio_num_t)CS_WIZ_PIN, 0);   // CS low = selected
 }
  
 static void wiz_cs_deselect(void)
 {
-    gpio_set_level((gpio_num_t)WIZ_PIN_CS, 1);   // CS high = deselected
+    gpio_set_level((gpio_num_t)CS_WIZ_PIN, 1);   // CS high = deselected
 }
  
 static uint8_t wiz_spi_read_byte(void)
@@ -113,7 +113,7 @@ static uint8_t wiz_spi_read_byte(void)
     spi_transaction_t t = {};
     t.length    = 8;                              // 8 bits
     t.flags     = SPI_TRANS_USE_RXDATA;
-    spi_device_transmit(s_spi, &t);
+    spi_device_transmit(WIZ_handle, &t);
     return t.rx_data[0];
 }
  
@@ -123,7 +123,7 @@ static void wiz_spi_write_byte(uint8_t byte)
     t.length    = 8;
     t.flags     = SPI_TRANS_USE_TXDATA;
     t.tx_data[0] = byte;
-    spi_device_transmit(s_spi, &t);
+    spi_device_transmit(WIZ_handle, &t);
 }
  
 // Burst read — much faster than byte-by-byte for large buffer reads
@@ -132,7 +132,7 @@ static void wiz_spi_read_burst(uint8_t *buf, uint16_t len)
     spi_transaction_t t = {};
     t.length    = len * 8;
     t.rx_buffer = buf;
-    spi_device_transmit(s_spi, &t);
+    spi_device_transmit(WIZ_handle, &t);
 }
  
 // Burst write — used when pushing data into W5500's TX buffer
@@ -141,7 +141,7 @@ static void wiz_spi_write_burst(uint8_t *buf, uint16_t len)
     spi_transaction_t t = {};
     t.length    = len * 8;
     t.tx_buffer = buf;
-    spi_device_transmit(s_spi, &t);
+    spi_device_transmit(WIZ_handle, &t);
 }
  
 
@@ -151,38 +151,16 @@ static void wiz_spi_write_burst(uint8_t *buf, uint16_t len)
  
 static void wiz_hw_reset(void)
 {
-    gpio_set_level((gpio_num_t)WIZ_PIN_RST, 0);
+    gpio_set_level((gpio_num_t)Reset_WIZ_PIN, 0);
     vTaskDelay(pdMS_TO_TICKS(10));    // Hold reset for 10ms
-    gpio_set_level((gpio_num_t)WIZ_PIN_RST, 1);
+    gpio_set_level((gpio_num_t)Reset_WIZ_PIN, 1);
     vTaskDelay(pdMS_TO_TICKS(150));   // Wait for W5500 to come up (datasheet: min 50ms)
 }
 
 // ---------------------------------------------------------------------------
 // Application-facing functions
 // ---------------------------------------------------------------------------
- 
-esp_err_t wiz_connect(uint8_t *remote_ip, uint16_t remote_port)
-{
-    // Open socket 0 in TCP mode, using local port 5000 (arbitrary)
-    if (socket(WIZ_SOCKET, Sn_MR_TCP, 5000, 0) != WIZ_SOCKET) {
-        ESP_LOGE(TAG, "socket() failed");
-        return ESP_FAIL;
-    }
- 
-    // Connect to remote host — W5500 handles the TCP handshake internally
-    if (connect(WIZ_SOCKET, remote_ip, remote_port) != SOCK_OK) {
-        ESP_LOGE(TAG, "connect() failed");
-        close(WIZ_SOCKET);
-        return ESP_FAIL;
-    }
- 
-    ESP_LOGI(TAG, "Connected to %d.%d.%d.%d:%d",
-             remote_ip[0], remote_ip[1], remote_ip[2], remote_ip[3],
-             remote_port);
- 
-    return ESP_OK;
-}
- 
+  
 esp_err_t wiz_send(const uint8_t *data, size_t length)
 {
     if (!data || length == 0) return ESP_ERR_INVALID_ARG;
@@ -223,6 +201,25 @@ esp_err_t wiz_receive(uint8_t *buf, size_t buf_size, size_t *bytes_read)
     return ESP_OK;
 }
 
+//In main: if(wiz_ensure_connected(ip, port) == ESP_OK){reconected}
+//For reconnection also
+esp_err_t wiz_ensure_connected(uint8_t *ip, uint16_t port)
+{
+    // Check W5500 socket status before attempting anything
+    if (getSn_SR(WIZ_SOCKET) == SOCK_ESTABLISHED) {
+        return ESP_OK;   // Already connected, nothing to do
+    }
+
+    wiz_disconnect();    // Clean up any half-open socket first
+
+    for (int attempt = 1; attempt <= 3; attempt++) {
+        ESP_LOGI(TAG, "Connect attempt %d/3", attempt);
+        if (wiz_connect(ip, port) == ESP_OK) return ESP_OK;
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    return ESP_FAIL;     // Caller decides what to do after 3 failures
+}
 // ---------------------------------------------------------------------------
 // wiz_ping — fire and forget: send and return IMMEDIATELY, no reply checked
 // ---------------------------------------------------------------------------
@@ -262,8 +259,33 @@ esp_err_t wiz_ping(uint8_t *target_ip, const char *message)
 //Remember to update the .h file when decided.
 //esp_err_t wiz_check_connection(uint8_t *buf)
 
+
+// ---------------------------------------------------------------------------
+// Connect/disconnet. This is for more than intitialize. It can also be used if
+// fro example ground station crfaches and connection has to be reestablished.
+// ---------------------------------------------------------------------------
+esp_err_t wiz_connect(uint8_t *remote_ip, uint16_t remote_port)
+{
+    // Open socket 0 in TCP mode, using local port 5000 (arbitrary)
+    if (socket(WIZ_SOCKET, Sn_MR_TCP, 5000, 0) != WIZ_SOCKET) {
+        ESP_LOGE(TAG, "socket() failed");
+        return ESP_FAIL;
+    }
  
+    // Connect to remote host — W5500 handles the TCP handshake internally
+    if (connect(WIZ_SOCKET, remote_ip, remote_port) != SOCK_OK) {
+        ESP_LOGE(TAG, "connect() failed");
+        close(WIZ_SOCKET);
+        return ESP_FAIL;
+    }
  
+    ESP_LOGI(TAG, "Connected to %d.%d.%d.%d:%d",
+             remote_ip[0], remote_ip[1], remote_ip[2], remote_ip[3],
+             remote_port);
+ 
+    return ESP_OK;
+}
+
 void wiz_disconnect(void)
 {
     disconnect(WIZ_SOCKET);

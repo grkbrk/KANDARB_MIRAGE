@@ -2,9 +2,16 @@
 
 // us = microseconds
 
+/* Use this instead of external RTC since big time span
+ and it will still work in case something would happen to
+ the external RTC. 
+*/ 
+#include "esp_timer.h"   // for esp_timer_get_time()
+
 #include "esp_err.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "Settings.h"
 
 /*
  * ConnectionLoss.h
@@ -17,16 +24,7 @@
  *   con_lost           — true while connection is down
  *   mode               — set to 1 (power-save loop) on termination
  *   terminated         — set to true on termination
- *
- * Typical usage in main:
- *   volatile int64_t loss_timestamp_us = -1;
- *   volatile bool    con_lost          = false;
- *   int              mode              = 0;
- *   bool             terminated        = false;
  */
-
-// 30 minutes expressed in microseconds (esp_timer resolution is 1 us)
-#define TERMINATION_TIMEOUT (30LL * 60LL * 1000000LL)
 
 #ifdef __cplusplus
 extern "C" {
