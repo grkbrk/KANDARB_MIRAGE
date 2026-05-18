@@ -100,7 +100,7 @@ static bool K96_read_ram(
     return (len > 0);
 }
 
-static void read_k96()
+void read_k96()
 {
     uint8_t response[16];
 
