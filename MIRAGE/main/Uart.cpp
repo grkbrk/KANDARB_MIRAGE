@@ -99,3 +99,60 @@ static bool K96_read_ram(
 
     return (len > 0);
 }
+
+static void read_k96()
+{
+    uint8_t response[16];
+
+    // CO2 concentration
+    if (K96_read_ram(0x038C, 2, response))
+    {
+        int16_t raw =
+            (response[3] << 8) |
+            response[4];
+
+        sensor_data.K96_CO2 =
+            (float)raw;
+    }
+
+    // Pressure
+    if (K96_read_ram(0x01D0, 2, response))
+    {
+        int16_t raw =
+            (response[3] << 8) |
+            response[4];
+
+        sensor_data.K96_pressure =
+            raw * 0.1f;  //hPa
+    }
+
+    // Humidity
+    if (K96_read_ram(0x01F0, 2, response))
+    {
+        int16_t raw =
+            (response[3] << 8) |
+            response[4];
+
+        sensor_data.K96_humidity =
+            raw * 0.01f;
+    }
+
+    // Temperature
+    if (K96_read_ram(0x01F8, 2, response))
+    {
+        int16_t raw =
+            (response[3] << 8) |
+            response[4];
+
+        sensor_data.K96_temperature =
+            raw * 0.01f;
+    }
+
+    // Error status
+    if (K96_read_ram(0x001C, 2, response))
+    {
+        sensor_data.K96_error =
+            (response[3] << 8) |
+            response[4];
+    }
+}
