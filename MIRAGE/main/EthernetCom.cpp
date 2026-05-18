@@ -95,7 +95,7 @@ static void build_icmp_request(icmp_packet_t *pkt, uint16_t id, uint16_t seq, co
  
 // ---------------------------------------------------------------------------
 // ioLibrary SPI callback implementations
-// These are the four functions ioLibrary needs to talk to the hardware.
+// These are the six functions ioLibrary needs to talk to the hardware.
 // ---------------------------------------------------------------------------
  
 static void wiz_cs_select(void)
@@ -132,7 +132,8 @@ static void wiz_spi_read_burst(uint8_t *buf, uint16_t len)
     spi_transaction_t t = {};
     t.length    = len * 8;
     t.rx_buffer = buf;
-    spi_device_transmit(WIZ_handle, &t);
+    t.tx_buffer = NULL;   // ESP-IDF will clock out 0x00 bytes on MOSI
+    spi_device_transmit(s_spi, &t);
 }
  
 // Burst write — used when pushing data into W5500's TX buffer
@@ -141,7 +142,8 @@ static void wiz_spi_write_burst(uint8_t *buf, uint16_t len)
     spi_transaction_t t = {};
     t.length    = len * 8;
     t.tx_buffer = buf;
-    spi_device_transmit(WIZ_handle, &t);
+    t.rx_buffer = NULL;   // Explicitly discard anything clocked in on MISO
+    spi_device_transmit(s_spi, &t);
 }
  
 

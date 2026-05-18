@@ -4,7 +4,7 @@
 #include "Settings.h"
 #include "watchdog.h"
 
-void Feed_watchdog(bool system_ok)
+void feed_watchdog(bool system_ok)
 {
     static uint8_t counter = 0;           //creates the variable once and keeps it in memory
 

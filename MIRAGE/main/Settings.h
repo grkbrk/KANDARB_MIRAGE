@@ -78,6 +78,8 @@ extern spi_device_handle_t WIZ_handle;
 //Socket 0 14KB TX + 14KB RX internal buffer
 //Socket 1  2KB TX +  2KB RX internal buffer
 
+#define ETHERNET_BUF_SIZE 128 //64 probly enough //datatype should be: size_t
+
 //Ethernet Network configuration
 #define WIZ_MAC         { 0x00, 0x08, 0xDC, 0x01, 0x02, 0x03 }
 #define WIZ_IP          { 192, 168, 1, 100 }
