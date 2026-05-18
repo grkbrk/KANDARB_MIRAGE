@@ -105,3 +105,13 @@ extern spi_device_handle_t WIZ_handle;
 //Neopixel
 extern led_strip_handle_t s_strip = NULL;
 #define NEOPIXEL_COUNT 3 //3 Neopixels available
+
+
+//main
+/* Modes
+* 1: Test Loop
+* 2: Standby
+* 3: Meassurement
+* 4: Humidity
+*/
+#define DEFAULT_MODE 1 
