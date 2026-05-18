@@ -77,7 +77,7 @@ esp_err_t sd_read(const char *filename, uint8_t *out_buf,
 
 esp_err_t sd_wipe_files(void)
 {
-    DIR *dor = opendir(SD_MOUNT_POINT);
+    DIR *dir = opendir(SD_MOUNT_POINT);
     if (!dir){
         ESP_LOGE(TAG, "Failed to open directory (errno %d)", errno);
         return ESP_FAIL;
