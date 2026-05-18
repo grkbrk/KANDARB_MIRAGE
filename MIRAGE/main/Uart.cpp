@@ -4,7 +4,9 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "Settings.h"
+#include "read_sensors.h"
 #include "uart.h"
+#include <math.h>
 
 void K96_on()
 {
@@ -97,7 +99,7 @@ static bool K96_read_ram(
             pdMS_TO_TICKS(1000)
         );
 
-    return (len > 0);
+    return (len == (num_bytes + 5));
 }
 
 void read_k96()
@@ -114,6 +116,10 @@ void read_k96()
         sensor_data.K96_CO2 =
             (float)raw;
     }
+    else
+    {
+        sensor_data.K96_CO2 = NAN;
+    }
 
     // Pressure
     if (K96_read_ram(0x01D0, 2, response))
@@ -124,6 +130,10 @@ void read_k96()
 
         sensor_data.K96_pressure =
             raw * 0.1f;  //hPa
+    }
+    else
+    {
+        sensor_data.K96_pressure = NAN;
     }
 
     // Humidity
@@ -136,6 +146,10 @@ void read_k96()
         sensor_data.K96_humidity =
             raw * 0.01f;
     }
+    else
+    {
+        sensor_data.K96_humidity = NAN;
+    }
 
     // Temperature
     if (K96_read_ram(0x01F8, 2, response))
@@ -147,6 +161,10 @@ void read_k96()
         sensor_data.K96_temperature =
             raw * 0.01f;
     }
+    else
+    {
+        sensor_data.K96_temperature = NAN;
+    }
 
     // Error status
     if (K96_read_ram(0x001C, 2, response))
@@ -154,5 +172,9 @@ void read_k96()
         sensor_data.K96_error =
             (response[3] << 8) |
             response[4];
+    }
+    else
+    {
+        sensor_data.K96_error = 0xFFFF;
     }
 }
