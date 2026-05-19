@@ -12,7 +12,7 @@
 #include <string.h>
  
 static const char *TAG = "Neopixel";
- 
+
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
  
 /** Push the current pixel buffer to the hardware. */

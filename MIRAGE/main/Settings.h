@@ -105,5 +105,5 @@ extern spi_device_handle_t WIZ_handle;
 #define TERMINATION_TIMEOUT (30LL * 60LL *1000000LL)
 
 //Neopixel
-extern led_strip_handle_t s_strip = NULL;
+extern led_strip_handle_t s_strip;
 #define NEOPIXEL_COUNT 3 //3 Neopixels available

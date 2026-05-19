@@ -1,4 +1,6 @@
 #include "Settings.h"
+#include "led_strip.h"
+#include "led_strip_rmt.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "driver/ledc.h"
@@ -7,6 +9,7 @@
 #include "Multiplexer.h"
 #include "initialize.h"
 #include "read_sensors.h"
+#include "esp_log.h"
 #include <stdio.h>
 
 //Initialize pins
@@ -19,7 +22,6 @@ void init_gpio_pins()
         (1ULL << Thermal_reset_PIN) |
         (1ULL << Preassure_reset_PIN) |
         (1ULL << K96_EN_PIN) |
-        (1ULL << Neo_PIN) |
         (1ULL << Reset_WIZ_PIN) |
         (1ULL << CS_SD_PIN) |
         (1ULL << CS_WIZ_PIN);
@@ -37,8 +39,6 @@ void init_gpio_pins()
     gpio_set_level(Reset_WIZ_PIN, 1);       // High for normal operations
 
     gpio_set_level(K96_EN_PIN, 0);          // Starts as passive, set to 1 to activate
-
-    gpio_set_level(Neo_PIN, 0);             // Start as off
 
     gpio_set_level(CS_SD_PIN, 1);           // Low to listen/respond, High to ignore
     gpio_set_level(CS_WIZ_PIN, 1);          // Low to listen/respond, High to ignore
@@ -181,4 +181,54 @@ void init_sensors()
     init_sht45_sensor(multiplex_Tt3_devP);
     init_ms5803(multiplex_Ambient, &pa1_cal);
     init_ms5803(multiplex_Tp4_Pp1_Tp5_Pp2, &pp2_cal);
+}
+
+//Initialize neopixel
+led_strip_handle_t s_strip = NULL;
+void init_neopixel()
+{
+    led_strip_config_t strip_config = {
+        .strip_gpio_num = Neo_PIN,
+        .max_leds = NEOPIXEL_COUNT,
+        .led_model = LED_MODEL_WS2812,
+        .color_component_format =
+            LED_STRIP_COLOR_COMPONENT_FMT_GRB,
+        .flags = {
+            .invert_out = false
+        }
+    };
+
+    led_strip_rmt_config_t rmt_config = {
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 10 * 1000 * 1000,
+        .mem_block_symbols = 64,
+        .flags = {
+            .with_dma = false
+        }
+    };
+
+    esp_err_t err =
+        led_strip_new_rmt_device(
+            &strip_config,
+            &rmt_config,
+            &s_strip
+        );
+
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(
+            "NeoPixel",
+            "Initialization failed: %s",
+            esp_err_to_name(err)
+        );
+
+        return;
+    }
+
+    led_strip_clear(s_strip);
+
+    ESP_LOGI(
+        "NeoPixel",
+        "NeoPixel initialized"
+    );
 }
