@@ -20,7 +20,7 @@ void K96_off()
 
 // Creates checksum for Modbus, used by K96 for error checking
 static uint16_t modbus_crc16(
-    const uint8_t* data,
+    const uint8_t *data,
     uint16_t length)
 {
     uint16_t crc = 0xFFFF;
@@ -50,7 +50,7 @@ static uint16_t modbus_crc16(
 static bool K96_read_ram(
     uint16_t ram_address,
     uint8_t num_bytes,
-    uint8_t* response)
+    uint8_t *response)
 {
     uint8_t frame[7];
 
@@ -86,9 +86,8 @@ static bool K96_read_ram(
     // Send MODBUS frame
     uart_write_bytes(
         UART_PORT,
-        (const char*)frame,
-        sizeof(frame)
-    );
+        (const char *)frame,
+        sizeof(frame));
 
     // Read response
     int len =
@@ -96,8 +95,7 @@ static bool K96_read_ram(
             UART_PORT,
             response,
             num_bytes + 5,
-            pdMS_TO_TICKS(1000)
-        );
+            pdMS_TO_TICKS(1000));
 
     return (len == (num_bytes + 5));
 }
@@ -129,7 +127,7 @@ void read_k96()
             response[4];
 
         sensor_data.K96_pressure =
-            raw * 0.1f;  //hPa
+            raw * 0.1f; // hPa
     }
     else
     {

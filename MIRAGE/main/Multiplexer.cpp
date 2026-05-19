@@ -11,6 +11,5 @@ esp_err_t select_mux_channel(uint8_t channel)
         multiplex_addr,
         &data,
         1,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 }

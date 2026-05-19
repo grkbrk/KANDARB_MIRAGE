@@ -5,14 +5,14 @@
 #include "driver/i2c.h"
 #include "driver/ledc.h"
 #include "driver/uart.h"
-#include "driver/spi_master.h"  
+#include "driver/spi_master.h"
 #include "Multiplexer.h"
 #include "initialize.h"
 #include "read_sensors.h"
 #include "esp_log.h"
 #include <stdio.h>
 
-//Initialize pins
+// Initialize pins
 void init_gpio_pins()
 {
     gpio_config_t io_conf;
@@ -32,19 +32,19 @@ void init_gpio_pins()
     gpio_config(&io_conf);
 
     // Safe startup states
-    gpio_set_level(Watchdog_PIN, 0);        // Pulse to start
+    gpio_set_level(Watchdog_PIN, 0); // Pulse to start
 
     gpio_set_level(Thermal_reset_PIN, 1);   // High for normal operations
     gpio_set_level(Preassure_reset_PIN, 1); // High for normal operations
     gpio_set_level(Reset_WIZ_PIN, 1);       // High for normal operations
 
-    gpio_set_level(K96_EN_PIN, 0);          // Starts as passive, set to 1 to activate
+    gpio_set_level(K96_EN_PIN, 0); // Starts as passive, set to 1 to activate
 
-    gpio_set_level(CS_SD_PIN, 1);           // Low to listen/respond, High to ignore
-    gpio_set_level(CS_WIZ_PIN, 1);          // Low to listen/respond, High to ignore
+    gpio_set_level(CS_SD_PIN, 1);  // Low to listen/respond, High to ignore
+    gpio_set_level(CS_WIZ_PIN, 1); // Low to listen/respond, High to ignore
 }
 
-//Initialize SPI
+// Initialize SPI
 spi_device_handle_t SD_handle;
 spi_device_handle_t WIZ_handle;
 
@@ -55,33 +55,31 @@ void init_spi()
     buscfg.mosi_io_num = SPI_MOSI_PIN;
     buscfg.miso_io_num = SPI_MISO_PIN;
     buscfg.sclk_io_num = SPI_clk_PIN;
-    buscfg.quadwp_io_num = -1;              // Disabling quadpins
-    buscfg.quadhd_io_num = -1;              // Disabling quadpins
-    
+    buscfg.quadwp_io_num = -1; // Disabling quadpins
+    buscfg.quadhd_io_num = -1; // Disabling quadpins
 
     spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
 
-    // Add SD-card 
+    // Add SD-card
     spi_device_interface_config_t SD_cfg = {};
     SD_cfg.clock_speed_hz = SD_clk_spd_hz;
-    SD_cfg.mode = 0;                            // SPI mode 0
-    SD_cfg.spics_io_num = CS_SD_PIN;            // CS pin for SD card
+    SD_cfg.mode = 0;                 // SPI mode 0
+    SD_cfg.spics_io_num = CS_SD_PIN; // CS pin for SD card
     SD_cfg.queue_size = SD_queue_size;
 
     spi_bus_add_device(SPI2_HOST, &SD_cfg, &SD_handle);
 
-
     // Add Ethernet
     spi_device_interface_config_t WIZ_cfg = {};
     WIZ_cfg.clock_speed_hz = WIZ_clk_spd_hz;
-    WIZ_cfg.mode = 0;                            // SPI mode 0
-    WIZ_cfg.spics_io_num = CS_WIZ_PIN;           // CS pin for Ethernet
+    WIZ_cfg.mode = 0;                  // SPI mode 0
+    WIZ_cfg.spics_io_num = CS_WIZ_PIN; // CS pin for Ethernet
     WIZ_cfg.queue_size = ethernet_queue_size;
 
     spi_bus_add_device(SPI2_HOST, &WIZ_cfg, &WIZ_handle);
 }
 
-//initialize I2c
+// initialize I2c
 void init_i2c()
 {
     i2c_config_t conf = {};
@@ -96,14 +94,14 @@ void init_i2c()
     i2c_driver_install(I2C_master, conf.mode, 0, 0, 0);
 }
 
-//Uart initialize
+// Uart initialize
 void init_uart()
 {
     uart_config_t uart_config = {};
 
     uart_config.baud_rate = 115200;
     uart_config.data_bits = UART_DATA_8_BITS;
-    uart_config.parity    = UART_PARITY_DISABLE;
+    uart_config.parity = UART_PARITY_DISABLE;
     uart_config.stop_bits = UART_STOP_BITS_2;
     uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     uart_config.source_clk = UART_SCLK_APB;
@@ -117,18 +115,16 @@ void init_uart()
         K96_TX_PIN,
         K96_RX_PIN,
         UART_PIN_NO_CHANGE,
-        UART_PIN_NO_CHANGE
-    );
+        UART_PIN_NO_CHANGE);
 
     // Install UART driver
     uart_driver_install(
         UART_PORT,
-        1024,   // RX buffer
-        0,      // TX buffer
-        0,      // Event queue size
+        1024, // RX buffer
+        0,    // TX buffer
+        0,    // Event queue size
         NULL,
-        0
-    );
+        0);
 }
 
 // Starting sensors that needs to be initialized
@@ -143,12 +139,11 @@ static void init_sht45_sensor(uint8_t channel)
         SHT45_addr,
         cmd,
         2,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 }
 
 // initioalize MS5803 sensors
-static void init_ms5803(uint8_t channel, MS5803_Calibration* cal)
+static void init_ms5803(uint8_t channel, MS5803_Calibration *cal)
 {
     select_mux_channel(channel);
 
@@ -165,8 +160,7 @@ static void init_ms5803(uint8_t channel, MS5803_Calibration* cal)
             1,
             data,
             2,
-            100 / portTICK_PERIOD_MS
-        );
+            100 / portTICK_PERIOD_MS);
 
         cal->C[i + 1] =
             (data[0] << 8) | data[1];
@@ -183,7 +177,7 @@ void init_sensors()
     init_ms5803(multiplex_Tp4_Pp1_Tp5_Pp2, &pp2_cal);
 }
 
-//Initialize neopixel
+// Initialize neopixel
 led_strip_handle_t s_strip = NULL;
 void init_neopixel()
 {
@@ -194,33 +188,27 @@ void init_neopixel()
         .color_component_format =
             LED_STRIP_COLOR_COMPONENT_FMT_GRB,
         .flags = {
-            .invert_out = false
-        }
-    };
+            .invert_out = false}};
 
     led_strip_rmt_config_t rmt_config = {
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10 * 1000 * 1000,
         .mem_block_symbols = 64,
         .flags = {
-            .with_dma = false
-        }
-    };
+            .with_dma = false}};
 
     esp_err_t err =
         led_strip_new_rmt_device(
             &strip_config,
             &rmt_config,
-            &s_strip
-        );
+            &s_strip);
 
     if (err != ESP_OK)
     {
         ESP_LOGE(
             "NeoPixel",
             "Initialization failed: %s",
-            esp_err_to_name(err)
-        );
+            esp_err_to_name(err));
 
         return;
     }
@@ -229,6 +217,5 @@ void init_neopixel()
 
     ESP_LOGI(
         "NeoPixel",
-        "NeoPixel initialized"
-    );
+        "NeoPixel initialized");
 }
