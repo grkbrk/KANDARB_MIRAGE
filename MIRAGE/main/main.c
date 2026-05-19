@@ -1,6 +1,18 @@
 #include <stdio.h>
 
 #include "Settings.h"
+#include "ConnectionLoss.h"
+#include "EthernetCom.h"
+#include "Humidity.h"
+#include "Initialize.h"
+#include "Multiplexer.h"
+#include "Neopixel.h"
+#include "read_sensors.h"
+#include "SDCard.h"
+#include "Uart.h"
+#include "watchdog.h"
+
+bool loop = true;
 
 /* Modes
 * 1: Test Loop
@@ -37,7 +49,9 @@ extern "C" void app_main()
     init_uart_k96();
     init_sensors();
     
-    loop();
+    while (loop == true){
+        loop();
+    }
 }
 
 void loop()
@@ -50,6 +64,11 @@ void loop()
 
     //Measure time of loop
     TickType_t currentTime_start = xTaskGetTickCount();
+
+    //Collec I2C data
+    if (mode != 1){
+        read_sensors();
+    }
     
     
     //Mode dependent actions
@@ -88,6 +107,21 @@ void loop()
     //Standby
     case 2:
         /* code */
+        if (esp_err_status == ESP_ERR_NOT_FOUND){
+            //No data in buffer = no command from ground
+        }
+        else if (esp_err_status == ESP_FAIL){
+            //Error when retrieving data
+            //What to do here?
+        }
+        else if (esp_err_status == ESP_OK){
+            //COmmand recieved
+            mode = 2; //When in testoop and recieved command, go to stby?
+            break;
+        }
+        else{
+            //Unknown return
+        }
         break;
 
     //Measurement
