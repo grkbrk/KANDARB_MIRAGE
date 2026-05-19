@@ -44,6 +44,17 @@ extern "C"
     esp_err_t wiz_receive(uint8_t *buf, size_t buf_size, size_t *bytes_read);
 
     /**
+     * @brief  Check if the TCP connection is established, and if not, attempt to reconnect.
+     *
+     * @param[in] remote_ip    Remote IP as 4-byte array, e.g. {192,168,1,50}
+     * @param[in] remote_port  Remote port number.
+     *
+     * @return ESP_OK if already connected or successfully reconnected,
+     *         or an esp_err_t on error.
+     */
+    esp_err_t wiz_ensure_connected(uint8_t *ip, uint16_t port)
+
+    /**
      * @brief  Send an ICMP Echo Request and return IMMEDIATELY.
      *         Fire-and-forget — no reply is waited for or checked.
      *         Useful for watchdog-style "I am alive" signals where
