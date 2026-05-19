@@ -63,6 +63,7 @@ void loop()
 
 
     //Measure time of loop
+    //Realtidsklockan instead?
     TickType_t currentTime_start = xTaskGetTickCount();
 
     //Collec I2C data
@@ -137,6 +138,8 @@ void loop()
         break;
     
     default:
+        mode = 1;
+        wiz_send(uint8_t *target_ip, "Unknown mode. Returning to test loop.");
         break;
     }
 
