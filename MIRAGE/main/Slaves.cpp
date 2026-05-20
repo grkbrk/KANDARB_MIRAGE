@@ -1,4 +1,5 @@
 #include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2c.h"
@@ -7,21 +8,63 @@
 #include "Multiplexer.h"
 #include "thermal_com.h"
 
-// Send live sensor data to thermal MCU
-bool thermal_send_sensor_data(
-    const SensorData* data)
+// Select slave mcu
+static bool select_slave(
+    SlaveDevice slave,
+    gpio_num_t* reset_pin)
+{
+    switch(slave)
+    {
+        case SLAVE_THERMAL:
+
+            select_mux_channel(
+                multiplex_Thermal
+            );
+
+            *reset_pin =
+                Thermal_reset_PIN;
+
+            return true;
+
+
+        case SLAVE_PRESSURE:
+
+            select_mux_channel(
+                multiplex_Pressure
+            );
+
+            *reset_pin =
+                Pressure_reset_PIN;
+
+            return true;
+    }
+
+    return false;
+}
+
+// Send telemetry/data to thermal MCU
+bool thermal_send_data(
+    DataID id,
+    float value)
 {
     select_mux_channel(
-        multiplex_Thermal
+
     );
 
-    uint8_t packet[13];
+    uint8_t packet[6];
 
+    // Packet type
     packet[0] = THERMAL_PACKET_DATA;
 
-    memcpy(&packet[1],  &data->Ta1, sizeof(float));
-    memcpy(&packet[5],  &data->Ha1, sizeof(float));
-    memcpy(&packet[9],  &data->Pa1, sizeof(float));
+    // Which telemetry this is
+    packet[1] = id;
+
+    // Copy float into packet
+    memcpy(
+        &packet[2],
+        &value,
+        sizeof(float)
+    );
 
     esp_err_t err =
         i2c_master_write_to_device(
@@ -35,7 +78,11 @@ bool thermal_send_sensor_data(
     return (err == ESP_OK);
 }
 
-// Send temporary command
+
+// ==================================================
+// Send temporary runtime command
+// ==================================================
+
 bool thermal_send_command(
     ThermalCommand cmd)
 {
@@ -61,7 +108,11 @@ bool thermal_send_command(
     return (err == ESP_OK);
 }
 
+
+// ==================================================
 // Update persistent regulation setting
+// ==================================================
+
 bool thermal_update_setting(
     ThermalSetting setting,
     float value)
@@ -94,7 +145,11 @@ bool thermal_update_setting(
     return (err == ESP_OK);
 }
 
-// Read thermal MCU status
+
+// ==================================================
+// Read status from thermal MCU
+// ==================================================
+
 bool thermal_read_status(
     ThermalStatus* status)
 {
@@ -122,12 +177,15 @@ bool thermal_read_status(
 
     status->online = true;
 
+    // Thermal MCU state
     status->state =
         data[0];
 
+    // Error flags
     status->error =
         data[1];
 
+    // Internal temperature
     memcpy(
         &status->internal_temperature,
         &data[2],
@@ -137,7 +195,11 @@ bool thermal_read_status(
     return true;
 }
 
-// Hardware reset of thermal MCU
+
+// ==================================================
+// Hardware reset thermal MCU
+// ==================================================
+
 void thermal_reset()
 {
     gpio_set_level(
