@@ -1,63 +1,86 @@
 #include <string.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "driver/i2c.h"
 #include "driver/gpio.h"
-
 #include "Settings.h"
 #include "Multiplexer.h"
 #include "thermal_com.h"
 
-// ==================================================
-// Packet types
-// ==================================================
+// Send live sensor data to thermal MCU
+bool thermal_send_sensor_data(
+    const SensorData* data)
+{
+    select_mux_channel(
+        multiplex_Thermal
+    );
 
-#define PACKET_COMMAND 0x01
-#define PACKET_SETTING 0x02
+    uint8_t packet[13];
 
-// ==================================================
-// Example command IDs
-// ==================================================
+    packet[0] = THERMAL_PACKET_DATA;
 
-#define CMD_PUMPS_ON 0x01
-#define CMD_PUMPS_OFF 0x02
+    memcpy(&packet[1],  &data->Ta1, sizeof(float));
+    memcpy(&packet[5],  &data->Ha1, sizeof(float));
+    memcpy(&packet[9],  &data->Pa1, sizeof(float));
 
-#define CMD_OPEN_SHUTTERS 0x03
-#define CMD_CLOSE_SHUTTERS 0x04
+    esp_err_t err =
+        i2c_master_write_to_device(
+            I2C_master,
+            Thermal_MCU_addr,
+            packet,
+            sizeof(packet),
+            100 / portTICK_PERIOD_MS
+        );
 
-#define CMD_AUTONOMOUS_MODE 0x05
+    return (err == ESP_OK);
+}
 
-// ==================================================
-// Example setting IDs
-// ==================================================
+// Send temporary command
+bool thermal_send_command(
+    ThermalCommand cmd)
+{
+    select_mux_channel(
+        multiplex_Thermal
+    );
 
-#define SET_TARGET_TEMP 0x01
+    uint8_t packet[2];
 
-// ==================================================
-// Send setting/value to thermal MCU
-// Example:
-// target temperature = 20°C
-// ==================================================
+    packet[0] = THERMAL_PACKET_COMMAND;
 
-bool thermal_send_data(
-    uint8_t setting_id,
+    packet[1] = cmd;
+
+    esp_err_t err =
+        i2c_master_write_to_device(
+            I2C_master,
+            Thermal_MCU_addr,
+            packet,
+            sizeof(packet),
+            100 / portTICK_PERIOD_MS
+        );
+
+    return (err == ESP_OK);
+}
+
+// Update persistent regulation setting
+bool thermal_update_setting(
+    ThermalSetting setting,
     float value)
 {
     select_mux_channel(
-        multiplex_Thermal);
+        multiplex_Thermal
+    );
 
     uint8_t packet[6];
 
-    packet[0] = PACKET_SETTING;
+    packet[0] = THERMAL_PACKET_SETTING;
 
-    packet[1] = setting_id;
+    packet[1] = setting;
 
     memcpy(
         &packet[2],
         &value,
-        sizeof(float));
+        sizeof(float)
+    );
 
     esp_err_t err =
         i2c_master_write_to_device(
@@ -65,89 +88,30 @@ bool thermal_send_data(
             Thermal_MCU_addr,
             packet,
             sizeof(packet),
-            100 / portTICK_PERIOD_MS);
+            100 / portTICK_PERIOD_MS
+        );
 
     return (err == ESP_OK);
 }
 
-// ==================================================
-// Send command to thermal MCU
-// ==================================================
-
-bool thermal_send_command(
-    uint8_t command)
-{
-    select_mux_channel(
-        multiplex_Thermal);
-
-    uint8_t packet[2];
-
-    packet[0] = PACKET_COMMAND;
-
-    packet[1] = command;
-
-    esp_err_t err =
-        i2c_master_write_to_device(
-            I2C_master,
-            Thermal_MCU_addr,
-            packet,
-            sizeof(packet),
-            100 / portTICK_PERIOD_MS);
-
-    return (err == ESP_OK);
-}
-
-// ==================================================
-// Reset thermal MCU
-// ==================================================
-
-void thermal_reset()
-{
-    gpio_set_level(
-        Thermal_reset_PIN,
-        0);
-
-    vTaskDelay(
-        pdMS_TO_TICKS(100));
-
-    gpio_set_level(
-        Thermal_reset_PIN,
-        1);
-}
-
-// ==================================================
-// Thermal status structure
-// ==================================================
-
-typedef struct
-{
-    bool online;
-
-    uint8_t state;
-
-    uint8_t error;
-
-} ThermalStatus;
-
-// ==================================================
 // Read thermal MCU status
-// ==================================================
-
 bool thermal_read_status(
-    ThermalStatus *status)
+    ThermalStatus* status)
 {
     select_mux_channel(
-        multiplex_Thermal);
+        multiplex_Thermal
+    );
 
-    uint8_t data[2];
+    uint8_t data[6];
 
     esp_err_t err =
         i2c_master_read_from_device(
             I2C_master,
             Thermal_MCU_addr,
             data,
-            2,
-            100 / portTICK_PERIOD_MS);
+            sizeof(data),
+            100 / portTICK_PERIOD_MS
+        );
 
     if (err != ESP_OK)
     {
@@ -164,5 +128,29 @@ bool thermal_read_status(
     status->error =
         data[1];
 
+    memcpy(
+        &status->internal_temperature,
+        &data[2],
+        sizeof(float)
+    );
+
     return true;
+}
+
+// Hardware reset of thermal MCU
+void thermal_reset()
+{
+    gpio_set_level(
+        Thermal_reset_PIN,
+        0
+    );
+
+    vTaskDelay(
+        pdMS_TO_TICKS(100)
+    );
+
+    gpio_set_level(
+        Thermal_reset_PIN,
+        1
+    );
 }
