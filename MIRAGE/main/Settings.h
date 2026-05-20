@@ -94,6 +94,10 @@ extern spi_device_handle_t WIZ_handle;
 
 #define SD_BUFFER_SIZE 8 * 512 // In bytes, min 512 bytes
 
+#define SENSOR_READING_SIZE sizeof(SensorData)
+#define READINGS_PER_BUFFER (SD_BUFFER_SIZE / SENSOR_READING_SIZE)
+
+
 // Uart
 #define UART_PORT UART_NUM_1
 
