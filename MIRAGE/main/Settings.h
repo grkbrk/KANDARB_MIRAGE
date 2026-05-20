@@ -42,8 +42,6 @@
 #define sensor_Tt1_addr 0x44     // SHT45 for temperature in outlet air
 #define sensor_Tt2_addr 0x48     // TMP1075 for temperature in SD-card
 #define sensor_Tt3_addr 0x44     // SHT45 for temperature in inlet air
-#define Thermal_MCU_addr 0x10    // Can be same since they are on different channels
-#define Preassure_MCU_addr 0x10  // Can be same since they are on different channels
 
 #define TMP1075_addr 0x48 // TMP1075 for temperature in pump 1, pump 2 and compressor, can be same since they are on different channels
 #define ABP2_addr 0x28    // ABP2 for preassure and temperature in pipe going between pumps and into compressor, can be same since they are on different channels

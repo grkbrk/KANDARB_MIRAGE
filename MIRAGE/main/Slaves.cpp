@@ -1,25 +1,29 @@
 #include <string.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2c.h"
 #include "driver/gpio.h"
 #include "Settings.h"
 #include "Multiplexer.h"
-#include "thermal_com.h"
+#include "communication.h"
+#include "Slaves.h"
+#include "read_sensors.h"
 
-// Select slave mcu
+// Shared slave address
+#define Slave_MCU_addr  0x42
+
+// Internal helper
 static bool select_slave(
     SlaveDevice slave,
+    uint8_t* mux_channel,
     gpio_num_t* reset_pin)
 {
     switch(slave)
     {
-        case SLAVE_THERMAL:
+        case thermal_mcu:
 
-            select_mux_channel(
-                multiplex_Thermal
-            );
+            *mux_channel =
+                multiplex_Tp1_devT;
 
             *reset_pin =
                 Thermal_reset_PIN;
@@ -27,14 +31,13 @@ static bool select_slave(
             return true;
 
 
-        case SLAVE_PRESSURE:
+        case pressure_mcu:
 
-            select_mux_channel(
-                multiplex_Pressure
-            );
+            *mux_channel =
+                multiplex_Tt3_devP;
 
             *reset_pin =
-                Pressure_reset_PIN;
+                Preassure_reset_PIN;
 
             return true;
     }
@@ -42,24 +45,37 @@ static bool select_slave(
     return false;
 }
 
-// Send telemetry/data to thermal MCU
-bool thermal_send_data(
-    DataID id,
-    float value)
+// Send telemetry/data
+bool slave_send_data(
+    SlaveDevice slave,
+    SlaveData data_id,
+    float value
+)
 {
-    select_mux_channel(
+    uint8_t mux_channel;
+    gpio_num_t reset_pin;
 
+    if (!select_slave(
+            slave,
+            &mux_channel,
+            &reset_pin))
+    {
+        return false;
+    }
+
+    // Select correct mux channel
+    select_mux_channel(
+        mux_channel
     );
 
     uint8_t packet[6];
 
-    // Packet type
-    packet[0] = THERMAL_PACKET_DATA;
+    packet[0] =
+        Slave_packet_data;
 
-    // Which telemetry this is
-    packet[1] = id;
+    packet[1] =
+        data_id;
 
-    // Copy float into packet
     memcpy(
         &packet[2],
         &value,
@@ -69,7 +85,7 @@ bool thermal_send_data(
     esp_err_t err =
         i2c_master_write_to_device(
             I2C_master,
-            Thermal_MCU_addr,
+            Slave_MCU_addr,
             packet,
             sizeof(packet),
             100 / portTICK_PERIOD_MS
@@ -78,28 +94,39 @@ bool thermal_send_data(
     return (err == ESP_OK);
 }
 
-
-// ==================================================
-// Send temporary runtime command
-// ==================================================
-
-bool thermal_send_command(
-    ThermalCommand cmd)
+// Send command
+bool slave_send_command(
+    SlaveDevice slave,
+    SlaveCommand command
+)
 {
+    uint8_t mux_channel;
+    gpio_num_t reset_pin;
+
+    if (!select_slave(
+            slave,
+            &mux_channel,
+            &reset_pin))
+    {
+        return false;
+    }
+
     select_mux_channel(
-        multiplex_Thermal
+        mux_channel
     );
 
     uint8_t packet[2];
 
-    packet[0] = THERMAL_PACKET_COMMAND;
+    packet[0] =
+        PACKET_COMMAND;
 
-    packet[1] = cmd;
+    packet[1] =
+        command;
 
     esp_err_t err =
         i2c_master_write_to_device(
             I2C_master,
-            Thermal_MCU_addr,
+            Slave_MCU_addr,
             packet,
             sizeof(packet),
             100 / portTICK_PERIOD_MS
@@ -108,22 +135,26 @@ bool thermal_send_command(
     return (err == ESP_OK);
 }
 
-
-// ==================================================
-// Update persistent regulation setting
-// ==================================================
-
-bool thermal_update_setting(
-    ThermalSetting setting,
+// Update persistent setting
+bool slave_update_setting(
+    SlaveDevice slave,
+    uint8_t setting,
     float value)
 {
-    select_mux_channel(
-        multiplex_Thermal
-    );
+    uint8_t mux_channel;
+    gpio_num_t reset_pin;
+
+    if (!select_slave(
+            slave,
+            &mux_channel,
+            &reset_pin))
+    {
+        return false;
+    }
 
     uint8_t packet[6];
 
-    packet[0] = THERMAL_PACKET_SETTING;
+    packet[0] = Slave_packet_setting;
 
     packet[1] = setting;
 
@@ -136,7 +167,7 @@ bool thermal_update_setting(
     esp_err_t err =
         i2c_master_write_to_device(
             I2C_master,
-            Thermal_MCU_addr,
+            Slave_MCU_addr,
             packet,
             sizeof(packet),
             100 / portTICK_PERIOD_MS
@@ -145,24 +176,32 @@ bool thermal_update_setting(
     return (err == ESP_OK);
 }
 
-
-// ==================================================
-// Read status from thermal MCU
-// ==================================================
-
-bool thermal_read_status(
-    ThermalStatus* status)
+// Read slave status
+bool slave_read_status(
+    SlaveDevice slave,
+    SlaveStatus* status)
 {
+    uint8_t mux_channel;
+    gpio_num_t reset_pin;
+
+    if (!select_slave(
+            slave,
+            &mux_channel,
+            &reset_pin))
+    {
+        return false;
+    }
+
     select_mux_channel(
-        multiplex_Thermal
+        mux_channel
     );
 
-    uint8_t data[6];
+    uint8_t data[2];
 
     esp_err_t err =
         i2c_master_read_from_device(
             I2C_master,
-            Thermal_MCU_addr,
+            Slave_MCU_addr,
             data,
             sizeof(data),
             100 / portTICK_PERIOD_MS
@@ -177,33 +216,36 @@ bool thermal_read_status(
 
     status->online = true;
 
-    // Thermal MCU state
     status->state =
         data[0];
 
-    // Error flags
     status->error =
         data[1];
-
-    // Internal temperature
-    memcpy(
-        &status->internal_temperature,
-        &data[2],
-        sizeof(float)
-    );
 
     return true;
 }
 
-
-// ==================================================
-// Hardware reset thermal MCU
-// ==================================================
-
-void thermal_reset()
+// Reset slave MCU
+void slave_reset(
+    SlaveDevice slave)
 {
+    uint8_t mux_channel;
+    gpio_num_t reset_pin;
+
+    if (!select_slave(
+            slave,
+            &mux_channel,
+            &reset_pin))
+    {
+        return;
+    }
+
+    select_mux_channel(
+        mux_channel
+    );
+
     gpio_set_level(
-        Thermal_reset_PIN,
+        reset_pin,
         0
     );
 
@@ -212,7 +254,7 @@ void thermal_reset()
     );
 
     gpio_set_level(
-        Thermal_reset_PIN,
+        reset_pin,
         1
     );
 }
