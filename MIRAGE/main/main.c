@@ -23,13 +23,15 @@ bool loop_exp = true;
  */
 int mode = DEFAULT_MODE // 1
 
-    // Watchdog
-    bool system_ok;
+// Watchdog
+bool system_ok;
 
 // Ethernet
 uint8_t ethernet_recieve_buf[ETHERNET_BUF_SIZE] = {0};
 size_t ethernet_recieve_buf_size = ETHERNET_BUF_SIZE;
 size_t ethernet_recieve_buf_bytes_read = 0;
+
+bool command_received = false;
 
 static const char *TAG = "main";
 
@@ -63,7 +65,7 @@ void loop()
 
     // Check for commands
     esp_err_status = wiz_receive(ethernet_recieve_buf, ethernet_recieve_buf_size, &ethernet_recieve_buf_bytes_read);
-    handle_command(esp_err_status);
+    handle_ethernet_data(esp_err_status);
 
 
     // Collec I2C data
@@ -96,7 +98,11 @@ void loop()
 
     // Standby
     case 2:
-        /* code */
+        //Reset overrides
+
+        //Pressure communication
+        
+        //Thermal communication
 
         break;
 
@@ -118,6 +124,13 @@ void loop()
         break;
     }
 
+    //Transmit data over E-Link
+    uint8_t ethernet_send_buf[sizeof(sensor_data)];
+    uint8_t satus_message[64] = ("Status: %d. Command recieved: %d. Mode: %d.",status_ok,command_received,mode);
+    memcpy(ethernet_send_buf, &sensor_data, sizeof(ethernet_send_buf));
+    memcpy(ethernet_send_buf, &satus_message, sizeof(ethernet_send_buf));
+    wiz_send(ethernet_send_buf, sizeof(ethernet_send_buf));
+
     // Wait until loop has taken 100 ms.
     TickType_t current_time_stop = xTaskGetTickCount();
     time_loop = pdMS_TO_TICKS(100) - (current_time_stop - current_time_start) if (time_loop > 0)
@@ -130,13 +143,13 @@ void loop()
 // Helpers
 // ---------------------------------------------------------------------------
 
-void handle_command(esp_err_t esp_err_status)
+void handle_ethernet_data(esp_err_t esp_err_status)
 {
     switch (esp_err_status)
     {
     case ESP_ERR_NOT_FOUND:
         // No data in buffer = no command from ground
-        /* code */
+        command_received = false;
         break;
     
     case ESP_OK:
@@ -146,6 +159,7 @@ void handle_command(esp_err_t esp_err_status)
             mode = 2;
         }
         handle_command(); 
+        command_received = true;
         break;
 
     case ESP_FAIL:
@@ -158,4 +172,11 @@ void handle_command(esp_err_t esp_err_status)
         ESP_LOGI(TAG, "Unexpected return from wiz_receive: %d", esp_err_status);
         break;
     }
+}
+
+void handle_command()
+{
+    // Interpret command in ethernet_recieve_buf and act accordingly
+    // For now, just log the received command
+    ESP_LOGI(TAG, "Received command: %.*s", (int)ethernet_recieve_buf_bytes_read, ethernet_recieve_buf);
 }
