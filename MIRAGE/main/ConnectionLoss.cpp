@@ -19,9 +19,12 @@ esp_err_t terminate_experiment(int64_t elapsed, int *mode, bool *terminated);
 static const char *TAG = "Connection loss / termination timer";
 
 esp_err_t connection_lost(bool *con_lost, int64_t *loss_timestamp_us){
-    *loss_timestamp_us = esp_timer_get_time(); //in us
-    ESP_LOGI(TAG, "Termination timer started at %lld us", *loss_timestamp_us);
-
+    if (*loss_timestamp_us == -1) //Timer not running
+    {  
+        *loss_timestamp_us = esp_timer_get_time(); //in us
+        ESP_LOGI(TAG, "Termination timer started at %lld us", *loss_timestamp_us);
+    }
+    
     *con_lost = true;
     ESP_LOGI(TAG, "Connection lost %d", *con_lost);
 

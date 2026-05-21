@@ -33,6 +33,10 @@ size_t ethernet_recieve_buf_bytes_read = 0;
 
 bool command_received = false;
 
+bool connection_lost = false; // To track connection status
+int64_t loss_timestamp_us = -1; // To track when connection was lost for termination
+int loops_since_connection = 0; // To buffer short con losses for stable running
+
 static const char *TAG = "main";
 
 /*  Put somewhere. For ConnectionLoss
@@ -64,6 +68,7 @@ void loop()
     feed_watchdog(system_ok);
 
     // Check for commands
+    loops_since_connection++; //Will be reset in handle_ethernet_data if connection is ok
     esp_err_status = wiz_receive(ethernet_recieve_buf, ethernet_recieve_buf_size, &ethernet_recieve_buf_bytes_read);
     handle_ethernet_data(esp_err_status);
 
@@ -108,13 +113,32 @@ void loop()
 
     // Measurement
     case 3:
-        /* code */
+        // Humidity check here if any 
+
+        // Elevation check in terms of pressure
+        if (sensor_data.Pa1 < P_STRATOSPHERE)
+        {
+            if loops_since_connection > LOOP_WO_CONNECTION // If connection lost for more than 10 loops, enter safe mode
+            {
+                mode = 2; // Standby
+                connection_lost = true;
+                connection_lost(&connection_lost, &loss_timestamp_us);
+                
+                wiz_ping(uint8_t *target_ip, "Connection lost. Entering safe mode.");
+                break;
+            }
+            //else: high altidude but have connection.
+        }
+        if (sensor_data.Pp2 > CHAMBER_P_THRESHOLD)
+        {
+            //CONTINUE HERE WITH "SHUTTER OPEN" IN CHART 
+        } 
         break;
 
     // Leave for now as stated by Anna
     // Humidity
     case 4:
-        /* code */
+        
         ESP_LOGI(TAG, "Humidity loop not implemented");
         break;
 
@@ -160,6 +184,9 @@ void handle_ethernet_data(esp_err_t esp_err_status)
         }
         handle_command(); 
         command_received = true;
+        connection_lost = false;
+        loops_since_connection = 0; // Reset connection loss buffer
+        connection_reestablished(&connection_lost, &loss_timestamp_us); 
         break;
 
     case ESP_FAIL:
