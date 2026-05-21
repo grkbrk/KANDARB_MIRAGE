@@ -60,52 +60,27 @@ void loop()
 {
     // Common actions
     feed_watchdog(system_ok);
+
     // Check for commands
     esp_err_status = wiz_receive(ethernet_recieve_buf, ethernet_recieve_buf_size, &ethernet_recieve_buf_bytes_read);
+    handle_command(esp_err_status);
 
-    // Measure time of loop
-    // Realtidsklockan instead?
-    TickType_t currentTime_start = xTaskGetTickCount();
-
-    if (esp_err_status == ESP_ERR_NOT_FOUND)
-    {
-        // No data in buffer = no command from ground
-    }
-    else if (esp_err_status == ESP_OK)
-    {
-        // COmmand recieved
-        if (mode == 1)
-        {
-            mode = 2;
-        }
-        handle_command(); //use a dictionairy of commands??
-    }
-    else if (esp_err_status == ESP_FAIL)
-    {
-        // Error when retrieving data
-        // What to do here?
-    }
-    else
-    {
-        // Unknown return
-    }
 
     // Collec I2C data
     if (mode != 1)
     {
         read_sensors();
-        //buffer_SD_data_binary(); //est time: 1.5 ms
-        //buffer_SD_data_csv();      //est time: 3 ms
-        //buffer_SD_data_binary_large(); //est time: 1.5 ms every 8th loop
-        buffer_SD_data_csv(sensor_data);      //est time: 3 ms every 8th loop    
+        //buffer_SD_data_binary_single(); //est time: 1.5 ms
+        //buffer_SD_data_csv_single();      //est time: 3 ms
+        //buffer_SD_data_binary(sensor_data); //4k - est time: 1.5 ms every 8th loop
+        buffer_SD_data_csv(sensor_data);      //4k - est time: 3 ms every 8th loop    
     }
 
-    
+
 
     // Mode dependent actions
     switch (mode)
     {
-    // Should this be "default:"?
     // Test loop
     case 1:
 
@@ -114,6 +89,7 @@ void loop()
 
         //!!!!!
         // Enter IP when given by ESA
+        // Ping ground that status is OK.
         esp_err_status = wiz_ping(uint8_t *target_ip, "No command recieved. Status: OK.");
 
         break;
@@ -147,5 +123,39 @@ void loop()
     time_loop = pdMS_TO_TICKS(100) - (current_time_stop - current_time_start) if (time_loop > 0)
     {
         vTaskDelay(time_loop);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+void handle_command(esp_err_t esp_err_status)
+{
+    switch (esp_err_status)
+    {
+    case ESP_ERR_NOT_FOUND:
+        // No data in buffer = no command from ground
+        /* code */
+        break;
+    
+    case ESP_OK:
+        // Command recieved
+        if (mode == 1)
+        {
+            mode = 2;
+        }
+        handle_command(); 
+        break;
+
+    case ESP_FAIL:
+        // Error when receiving data
+        // What to do here?
+         break;
+    
+    default:
+        //Unexpected return
+        ESP_LOGI(TAG, "Unexpected return from wiz_receive: %d", esp_err_status);
+        break;
     }
 }

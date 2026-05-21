@@ -38,7 +38,7 @@
 // ===================================================================
 // Option 1: Binary buffer (fastest, smallest)
 // ===================================================================
-void buffer_SD_data_binary()
+void buffer_SD_data_binary_single()
 {
     uint8_t buf[sizeof(sensor_data)];
     memcpy(buf, &sensor_data, sizeof(buf));
@@ -49,7 +49,7 @@ void buffer_SD_data_binary()
 // ===================================================================
 // Option 2: CSV text format (readable, larger)
 // ===================================================================
-void buffer_SD_data_csv()
+void buffer_SD_data_csv_single()
 {
     char line[512];
     int n = snprintf(line, sizeof(line),
