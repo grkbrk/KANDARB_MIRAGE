@@ -115,4 +115,6 @@ extern led_strip_handle_t s_strip;
 
 // Sensor value thresholds
 #define P_STRATOSPHERE 40 // Stratosphere limit, TBD
-#define CHAMBER_P_THRESHOLD // Pressure threshold for meassurment chamber, TBD
+#define CHAMBER_P_SHUTTER_THRESHOLD // Pressure threshold for opening shutter to meassurment chamber, TBD
+#define CHAMBER_P_CHAMBER_THRESHOLD // Pressure threshold for taking measurements,TBD
+#define INLET_TEMPERATURE_THRESHOLD // Temperature threshold for taking measurements, TBD

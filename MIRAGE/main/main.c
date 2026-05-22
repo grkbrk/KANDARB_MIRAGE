@@ -37,6 +37,9 @@ bool connection_lost = false; // To track connection status
 int64_t loss_timestamp_us = -1; // To track when connection was lost for termination
 int loops_since_connection = 0; // To buffer short con losses for stable running
 
+//Pressure
+bool shutters_open = false; // To track if shutters are open
+
 static const char *TAG = "main";
 
 /*  Put somewhere. For ConnectionLoss
@@ -129,10 +132,35 @@ void loop()
             }
             //else: high altidude but have connection.
         }
-        if (sensor_data.Pp2 > CHAMBER_P_THRESHOLD)
+        //Check if pressure in chamber is below threshold, if so, increase pressure first.
+        if (sensor_data.Pp2 < CHAMBER_P_SHUTTER_THRESHOLD)
         {
-            //CONTINUE HERE WITH "SHUTTER OPEN" IN CHART 
+            //Pressure communication: increase p in chamber.
+            break;
         } 
+        //Open shutters if close
+        //Skip data collection to ensure proper pressure in chamber.
+        if (shutters_open == false)
+        {
+            //Pressure communication: open shutters
+            shutters_open = true;
+            break;
+        }
+        //Check if pressure in chamber is above threshold, if so, take meassurements.
+        if (sensor_data.Pp2 < CHAMBER_P_CHAMBER_THRESHOLD)
+        {
+            //Pressure communication: increase p in chamber.
+            break;
+        }
+        // Check if inlet temperature is above threshold, if so, take meassurements. If not, decrease inlet temperature.
+        if (sensor_data.Tt3 < INLET_TEMPERATURE_THRESHOLD)
+        {
+            //Thermal communication: increase inlet temperature
+            break;
+        }
+        // Take meassurements!!!
+        readK96();
+        buffer_SD_data_csv(sensor_data); 
         break;
 
     // Leave for now as stated by Anna
