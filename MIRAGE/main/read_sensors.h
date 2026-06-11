@@ -7,6 +7,8 @@ struct SensorData
     uint8_t minutes;
     uint8_t hours;
 
+    // hej
+
     float Tp1;           // Vacum pump 1 temperature
     float Tp2;           // Vacum pump 2 temperature
     float Tp3;           // Compressor temperature
