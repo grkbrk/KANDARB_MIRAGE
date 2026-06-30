@@ -8,15 +8,8 @@
 
 SensorData sensor_data;
 
-//TMP1075 KLAR
-//ABP2 KLAR
-//SHT45 KLAR
-//TMP117 KLAR
-//MS5803 KLAR
-//DS3231
-
-//continous sensor
-static void read_tmp1075(float* temperature)
+// continous sensor
+static void read_tmp1075(float *temperature)
 {
     uint8_t temp_reg = 0x00;
     uint8_t data[2];
@@ -28,8 +21,7 @@ static void read_tmp1075(float* temperature)
         1,
         data,
         2,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     int16_t raw =
         (data[0] << 8) | data[1];
@@ -44,8 +36,8 @@ static void read_tmp1075(float* temperature)
 }
 
 // Continuous pressure + temperature
-static void read_abp2(float* pressure,
-                      float* temperature)
+static void read_abp2(float *pressure,
+                      float *temperature)
 {
     uint8_t data[4];
 
@@ -54,8 +46,7 @@ static void read_abp2(float* pressure,
         ABP2_addr,
         data,
         4,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     // Pressure
     if (pressure != nullptr)
@@ -76,13 +67,12 @@ static void read_abp2(float* pressure,
             ((data[3] & 0xE0) >> 5);
 
         *temperature =
-            ((float)raw_temperature * 200.0f / 2047.0f)
-            - 50.0f;
+            ((float)raw_temperature * 200.0f / 2047.0f) - 50.0f;
     }
 }
 
 // Continuous temperature sensor
-static void read_tmp117(float* temperature)
+static void read_tmp117(float *temperature)
 {
     uint8_t reg = 0x00;
     uint8_t data[2];
@@ -94,8 +84,7 @@ static void read_tmp117(float* temperature)
         1,
         data,
         2,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     int16_t raw =
         (data[0] << 8) | data[1];
@@ -108,8 +97,8 @@ static void read_tmp117(float* temperature)
 }
 
 // Continuous periodic mode
-static void read_sht45(float* temperature,
-                       float* humidity)
+static void read_sht45(float *temperature,
+                       float *humidity)
 {
     uint8_t data[6];
 
@@ -118,8 +107,7 @@ static void read_sht45(float* temperature,
         SHT45_addr,
         data,
         6,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     // Temperature
     if (temperature != nullptr)
@@ -130,7 +118,7 @@ static void read_sht45(float* temperature,
         *temperature =
             -45.0f +
             175.0f *
-            ((float)raw_temp / 65535.0f);
+                ((float)raw_temp / 65535.0f);
     }
 
     // Humidity
@@ -142,7 +130,7 @@ static void read_sht45(float* temperature,
         *humidity =
             -6.0f +
             125.0f *
-            ((float)raw_humidity / 65535.0f);
+                ((float)raw_humidity / 65535.0f);
     }
 }
 
@@ -150,7 +138,7 @@ static void read_sht45(float* temperature,
 MS5803_Calibration pa1_cal;
 MS5803_Calibration pp2_cal;
 
-static void read_ms5803(MS5803_Calibration* cal, float* pressure)
+static void read_ms5803(MS5803_Calibration *cal, float *pressure)
 {
     uint8_t cmd;
     uint8_t data[3];
@@ -166,8 +154,7 @@ static void read_ms5803(MS5803_Calibration* cal, float* pressure)
         MS5803_addr,
         &cmd,
         1,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -180,8 +167,7 @@ static void read_ms5803(MS5803_Calibration* cal, float* pressure)
         1,
         data,
         3,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     D1 =
         ((uint32_t)data[0] << 16) |
@@ -195,8 +181,7 @@ static void read_ms5803(MS5803_Calibration* cal, float* pressure)
         MS5803_addr,
         &cmd,
         1,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -209,8 +194,7 @@ static void read_ms5803(MS5803_Calibration* cal, float* pressure)
         1,
         data,
         3,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     D2 =
         ((uint32_t)data[0] << 16) |
@@ -228,7 +212,7 @@ static void read_ms5803(MS5803_Calibration* cal, float* pressure)
 
     if (pressure != nullptr)
     {
-        *pressure = (float)P;  // Pressure in pas
+        *pressure = (float)P; // Pressure in pas
     }
 }
 
@@ -240,7 +224,7 @@ static uint8_t bcd_to_decimal(uint8_t bcd)
 }
 
 // DS3231 RTC READ
-static void read_ds3231(uint8_t* hours, uint8_t* minutes, uint8_t* seconds)
+static void read_ds3231(uint8_t *hours, uint8_t *minutes, uint8_t *seconds)
 {
     uint8_t reg = 0x00;
     uint8_t data[3];
@@ -252,8 +236,7 @@ static void read_ds3231(uint8_t* hours, uint8_t* minutes, uint8_t* seconds)
         1,
         data,
         3,
-        100 / portTICK_PERIOD_MS
-    );
+        100 / portTICK_PERIOD_MS);
 
     // Seconds
     if (seconds != nullptr)
@@ -285,35 +268,29 @@ void read_sensors()
 
     read_tmp1075(&sensor_data.Tp1);
 
-
     // Channel 1: RTC + Tp2
     select_mux_channel(multiplex_RTC_Tp2);
 
     read_ds3231(
         &sensor_data.hours,
         &sensor_data.minutes,
-        &sensor_data.seconds
-    );
+        &sensor_data.seconds);
 
     read_tmp1075(&sensor_data.Tp2);
-
 
     // Channel 2: Ambient sensors (temperature, humidity, preassure)
     select_mux_channel(multiplex_Ambient);
 
     read_ms5803(
         &pa1_cal,
-        &sensor_data.Pa1
-    );
+        &sensor_data.Pa1);
 
     read_tmp117(
-        &sensor_data.Ta1
-    );
+        &sensor_data.Ta1);
 
     read_sht45(
         &sensor_data.Ta2,
-        &sensor_data.Ha1
-    );
+        &sensor_data.Ha1);
 
     // Channel 3: Tp4 + Pp1 + Tp5 + Pp2
     select_mux_channel(multiplex_Tp4_Pp1_Tp5_Pp2);
@@ -321,53 +298,43 @@ void read_sensors()
     // ABP2 pipe pressure + temperature
     read_abp2(
         &sensor_data.Pp1,
-        &sensor_data.Tp4
-    );
+        &sensor_data.Tp4);
 
     // Chamber temperature
     read_sht45(
         &sensor_data.Tp5,
-        nullptr
-    );
+        nullptr);
 
     // Chamber pressure
     read_ms5803(
         &pp2_cal,
-        &sensor_data.Pp2
-    );
-
+        &sensor_data.Pp2);
 
     // Channel 4: Tp3
     select_mux_channel(multiplex_Tp3);
 
     read_tmp1075(&sensor_data.Tp3);
 
-
     // Channel 5: Tt1 + Tt2
     select_mux_channel(multiplex_Outlet_SD);
 
     read_sht45(
         &sensor_data.Tt1,
-        nullptr
-    );
+        nullptr);
 
     read_tmp1075(&sensor_data.Tt2);
-
 
     // Channel 6: Tp6 + Pp3
     select_mux_channel(multiplex_Tp6_Pp3);
 
     read_abp2(
         &sensor_data.Pp3,
-        &sensor_data.Tp6
-    );
-
+        &sensor_data.Tp6);
 
     // Channel 7: Tt3
     select_mux_channel(multiplex_Tt3_devP);
 
     read_sht45(
         &sensor_data.Tt3,
-        nullptr
-    );
+        nullptr);
 }

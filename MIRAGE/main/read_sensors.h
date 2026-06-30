@@ -1,10 +1,13 @@
 #pragma once
 #include <stdint.h>
 
-struct SensorData {
+struct SensorData 
+{
     uint8_t seconds;
     uint8_t minutes;
     uint8_t hours;
+
+    // hej
 
     float Tp1;           // Vacum pump 1 temperature
     float Tp2;           // Vacum pump 2 temperature
@@ -22,6 +25,12 @@ struct SensorData {
     float Tt1;           // Temperature in outlet air
     float Tt2;           // Temperature in SD-card
     float Tt3;           // Temperature in inlet air
+
+    float K96_CO2;           // CO2 concentration [ppm]
+    float K96_pressure;      // Internal pressure [hPa]
+    float K96_temperature;   // Internal temperature [°C]
+    float K96_humidity;      // Internal humidity [%RH]
+    uint16_t K96_error;      // K96 error/status flags
 };
 
 extern SensorData sensor_data;

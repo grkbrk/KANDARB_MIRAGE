@@ -1,6 +1,6 @@
 idf_component_register(
     SRCS
-        "main.c"
+       
         "ConnectionLoss.cpp"
         "EthernetCom.cpp"
         "SDCard.cpp"
