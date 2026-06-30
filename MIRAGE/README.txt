@@ -3,10 +3,10 @@
 
   This is the driver for the Ethernet module and is required 
   for the code in EthernetCom to work. EthernetCom is based 
-  on this libary.
+  on this library.
 
   The library is provided by Wiznet which is the company
-  producing the Ethernet modlue we are using. We are allowed
+  producing the Ethernet module we are using. We are allowed
   to use it according to the copyright notice at the top of the
   files.
 */
