@@ -1,13 +1,14 @@
 #pragma once
 #include <stdint.h>
 
+// Stores all measured sensor values in one place
 struct SensorData 
 {
     uint8_t seconds;
     uint8_t minutes;
     uint8_t hours;
 
-    // hej
+
 
     float Tp1;           // Vacum pump 1 temperature
     float Tp2;           // Vacum pump 2 temperature
@@ -35,6 +36,7 @@ struct SensorData
 
 extern SensorData sensor_data;
 
+// Stores calibration coefficients for the MS5803 pressure sensors
 struct MS5803_Calibration
 {
     uint16_t C[7];
@@ -43,6 +45,8 @@ struct MS5803_Calibration
 extern MS5803_Calibration pa1_cal;
 extern MS5803_Calibration pp2_cal;
 
+// Reads one MS5803 pressure sensor using its calibration data
 void read_ms5803(MS5803_Calibration* cal, float* pressure);
 
+// Calls the individual sensor-reading functions
 void read_sensors();
